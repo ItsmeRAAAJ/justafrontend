@@ -1,0 +1,181 @@
+/* ============================================================================
+   Rail Samanvay — design tokens
+   ----------------------------------------------------------------------------
+   Two grounded themes, one product.
+
+   DARK  "Control Room at Night" — a divisional control room / relay interlocking
+         panel after dark. Warm graphite enamel, brass hardware, physical
+         indicator lamps. Glow is permitted ONLY on things that are literally
+         lamps; rails, rules and borders never glow.
+
+   LIGHT "Official Circular / Ledger Desk" — Railway Board letters, CRIS
+         circulars, IRTMM manual pages. Cool technical-drawing paper, blue-grey
+         ruled lines used as structure, signal states rendered as rubber-stamp
+         franking marks rather than glowing text.
+
+   Constant across both: the brass accent hue (~36deg), the type system, the
+   layout skeleton, the semantic mapping (red=conflict, amber=caution,
+   green=clear), department hues, radii, and the corridor geometry.
+   ========================================================================= */
+
+:root,
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  /* ── Surfaces ─────────────────────────────────────────────────────────── */
+  --rs-bg: #141210;          /* warm graphite near-black: R>G>B, never navy */
+  --rs-bg-alt: #191512;
+  --rs-surface: #1d1a17;     /* lifted panel plate */
+  --rs-surface-2: #262220;   /* bezel / hover */
+  --rs-surface-3: #100e0c;   /* recessed input well */
+  --rs-line: #332d28;        /* panel seam */
+  --rs-line-strong: #4a4038; /* engraved divider */
+  --rs-line-soft: #241f1c;   /* hairline */
+  --rs-overlay: rgba(8, 6, 5, 0.72);
+
+  /* ── Text ─────────────────────────────────────────────────────────────── */
+  --rs-text: #f0e9de;        /* warm off-white: enamel board under tungsten */
+  --rs-text-muted: #a79c8d;
+  --rs-text-dim: #7c7264;
+  --rs-on-accent: #1a1206;
+
+  /* ── Brass: the accent thread that survives both themes ───────────────── */
+  --rs-accent: #c9973f;
+  --rs-accent-strong: #e3b45f;
+  --rs-accent-soft: rgba(201, 151, 63, 0.13);
+  --rs-accent-line: rgba(201, 151, 63, 0.34);
+
+  /* ── Signal aspects: muted lamp tones, not saturated web colour ────────── */
+  --rs-red: #d2493a;
+  --rs-red-text: #ee9384;
+  --rs-red-fill: rgba(210, 73, 58, 0.16);
+  --rs-red-line: rgba(210, 73, 58, 0.46);
+  --rs-red-core: #ff6b55;
+
+  --rs-amber: #dfa43a;
+  --rs-amber-text: #f0c173;
+  --rs-amber-fill: rgba(223, 164, 58, 0.15);
+  --rs-amber-line: rgba(223, 164, 58, 0.44);
+  --rs-amber-core: #ffc96b;
+
+  --rs-green: #3aa878;
+  --rs-green-text: #7fd9ae;
+  --rs-green-fill: rgba(58, 168, 120, 0.15);
+  --rs-green-line: rgba(58, 168, 120, 0.44);
+  --rs-green-core: #5fe0a8;
+
+  /* ── Departments: the physical material each department owns ───────────── */
+  /* Engineering = drawing-office blue · S&T = cable verdigris · TRD = OHE copper */
+  --rs-dept-eng: #4e82be;
+  --rs-dept-eng-fill: #2a3a4c;
+  --rs-dept-eng-text: #a9cbee;
+
+  --rs-dept-snt: #2f9aa6;
+  --rs-dept-snt-fill: #1e3c42;
+  --rs-dept-snt-text: #9adae2;
+
+  --rs-dept-trd: #c2743c;
+  --rs-dept-trd-fill: #40301f;
+  --rs-dept-trd-text: #eebb8e;
+
+  --rs-dept-other: #8e72be;
+  --rs-dept-other-fill: #322b45;
+  --rs-dept-other-text: #c8b6ea;
+
+  /* ── Track schematic ──────────────────────────────────────────────────── */
+  --rs-rail: #5c5147;          /* rail head, unlit */
+  --rs-rail-strong: #8a7a63;   /* rail catching panel light */
+  --rs-sleeper: rgba(240, 233, 222, 0.07);
+  --rs-sleeper-major: rgba(240, 233, 222, 0.15);
+  --rs-node: #1d1a17;          /* station node body */
+  --rs-node-line: #a79c8d;
+  --rs-flare: #f5dfae;         /* signal flare travelling the rail */
+
+  /* ── Effects ──────────────────────────────────────────────────────────── */
+  --rs-glow: 1;                /* lamps illuminate in dark; 0 on paper */
+  --rs-focus: #e3b45f;
+  --rs-shadow-panel: 0 10px 28px -12px rgba(0, 0, 0, 0.75);
+  --rs-shadow-raised: 0 18px 44px -16px rgba(0, 0, 0, 0.85);
+  --rs-inset: inset 0 1px 0 rgba(240, 233, 222, 0.035);
+  --rs-paper-edge: none;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+
+  /* ── Surfaces: cool technical-drawing paper — explicitly not cream ────── */
+  --rs-bg: #e9ecf0;
+  --rs-bg-alt: #e1e6ec;
+  --rs-surface: #fbfcfd;
+  --rs-surface-2: #f1f4f7;
+  --rs-surface-3: #ffffff;
+  --rs-line: #c2ccd8;         /* the ruled-ledger blue-grey rule */
+  --rs-line-strong: #93a3b5;
+  --rs-line-soft: #dde3ea;
+  --rs-overlay: rgba(38, 48, 60, 0.42);
+
+  /* ── Text ─────────────────────────────────────────────────────────────── */
+  --rs-text: #1c2530;         /* cool dark charcoal, never pure black */
+  --rs-text-muted: #56646f;
+  --rs-text-dim: #78848f;
+  --rs-on-accent: #fff8ec;
+
+  /* ── Brass, darkened for paper: an embossed seal, not a glow ───────────── */
+  --rs-accent: #8a5d1c;
+  --rs-accent-strong: #6e4914;
+  --rs-accent-soft: #f5ebda;
+  --rs-accent-line: rgba(138, 93, 28, 0.38);
+
+  /* ── Signal aspects as stamp-pad inks ─────────────────────────────────── */
+  --rs-red: #a63426;
+  --rs-red-text: #8e2a1e;
+  --rs-red-fill: #f7e2de;
+  --rs-red-line: rgba(166, 52, 38, 0.45);
+  --rs-red-core: #c2402f;
+
+  --rs-amber: #8a5806;
+  --rs-amber-text: #74490a;
+  --rs-amber-fill: #faedd1;
+  --rs-amber-line: rgba(138, 88, 6, 0.42);
+  --rs-amber-core: #c98a18;
+
+  --rs-green: #1d6b4c;
+  --rs-green-text: #175a3f;
+  --rs-green-fill: #dcede3;
+  --rs-green-line: rgba(29, 107, 76, 0.42);
+  --rs-green-core: #2a8b62;
+
+  /* ── Departments: same hues, weighted for ink on paper ────────────────── */
+  --rs-dept-eng: #2f5f94;
+  --rs-dept-eng-fill: #dce7f3;
+  --rs-dept-eng-text: #234a73;
+
+  --rs-dept-snt: #1e6e78;
+  --rs-dept-snt-fill: #d8ebed;
+  --rs-dept-snt-text: #155258;
+
+  --rs-dept-trd: #99522a;
+  --rs-dept-trd-fill: #f4e4d8;
+  --rs-dept-trd-text: #7a4121;
+
+  --rs-dept-other: #63479a;
+  --rs-dept-other-fill: #e6e0f2;
+  --rs-dept-other-text: #4d3679;
+
+  /* ── Track schematic: printed route diagram, drawn in ink ─────────────── */
+  --rs-rail: #8e9dad;
+  --rs-rail-strong: #5b6b7c;
+  --rs-sleeper: rgba(28, 37, 48, 0.09);
+  --rs-sleeper-major: rgba(28, 37, 48, 0.18);
+  --rs-node: #ffffff;
+  --rs-node-line: #46545f;
+  --rs-flare: #46617e;         /* ink wash sweeping the rail, not a glow */
+
+  /* ── Effects ──────────────────────────────────────────────────────────── */
+  --rs-glow: 0;
+  --rs-focus: #8a5d1c;
+  --rs-shadow-panel: 0 1px 2px rgba(28, 37, 48, 0.07), 0 1px 0 rgba(28, 37, 48, 0.04);
+  --rs-shadow-raised: 0 12px 30px -14px rgba(28, 37, 48, 0.3);
+  --rs-inset: none;
+  --rs-paper-edge: inset 0 0 0 1px rgba(255, 255, 255, 0.7);
+}

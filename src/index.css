@@ -1,0 +1,350 @@
+@import './theme/tokens.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================================
+   BASE
+   ========================================================================= */
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background: var(--rs-bg);
+    color: var(--rs-text);
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+
+  /* Visible in both themes, and never removed — this is a safety-adjacent tool. */
+  :focus-visible {
+    outline: 2px solid var(--rs-focus);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  ::selection {
+    background: var(--rs-accent-line);
+    color: var(--rs-text);
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--rs-bg-alt);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--rs-line-strong);
+    border: 2px solid var(--rs-bg-alt);
+    border-radius: 6px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--rs-accent);
+  }
+
+  /* Chart.js and native controls need to know which way the paper faces. */
+  select option {
+    background: var(--rs-surface);
+    color: var(--rs-text);
+  }
+}
+
+/* ============================================================================
+   THEME CROSS-FADE
+   Applied by ThemeProvider only for the duration of a toggle, and skipped
+   entirely under prefers-reduced-motion.
+   ========================================================================= */
+
+html.theme-transition,
+html.theme-transition *,
+html.theme-transition *::before,
+html.theme-transition *::after {
+  transition:
+    background-color 260ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    border-color 260ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    color 260ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    fill 260ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    stroke 260ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 260ms cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+  transition-delay: 0ms !important;
+}
+
+/* ============================================================================
+   COMPONENTS
+   ========================================================================= */
+
+@layer components {
+  /* ── Typography ────────────────────────────────────────────────────────── */
+
+  .page-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    @apply text-[26px] font-bold uppercase leading-none tracking-[0.03em] text-ink;
+  }
+
+  .section-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    @apply text-[17px] font-semibold uppercase leading-tight tracking-[0.05em] text-ink;
+  }
+
+  /* Structural rule under every page and section title. In light mode this is
+     the ruled-ledger device; in dark it reads as a brass panel seam. */
+  .rule-double {
+    @apply h-px w-full;
+    background: var(--rs-line-strong);
+    box-shadow: 0 3px 0 -2px var(--rs-line);
+  }
+
+  .caption {
+    font-family: 'IBM Plex Mono', monospace;
+    @apply text-[10px] font-medium uppercase leading-none tracking-[0.14em] text-dim;
+  }
+
+  .data {
+    font-family: 'IBM Plex Mono', monospace;
+    @apply text-xs tracking-tight;
+  }
+
+  /* ── Panels ────────────────────────────────────────────────────────────── */
+
+  .panel {
+    @apply rounded-lg border border-line bg-surface;
+    box-shadow: var(--rs-shadow-panel), var(--rs-inset);
+  }
+
+  .panel-pad {
+    @apply panel p-5;
+  }
+
+  /* A recessed well — an inset panel cutout in dark, a tinted table band in light. */
+  .well {
+    @apply rounded border border-line;
+    background: var(--rs-surface-3);
+  }
+
+  /* ── Buttons ───────────────────────────────────────────────────────────── */
+
+  .btn {
+    font-family: 'IBM Plex Sans', sans-serif;
+    @apply inline-flex select-none items-center justify-center gap-2 rounded border px-3.5 py-2
+      text-[13px] font-semibold leading-none tracking-[0.02em]
+      transition-all duration-150 ease-signal
+      active:translate-y-px disabled:cursor-not-allowed disabled:opacity-45 disabled:active:translate-y-0;
+  }
+
+  /* Primary: brass. Railway hardware — used sparingly. */
+  .btn-brass {
+    @apply btn;
+    background: var(--rs-accent);
+    border-color: var(--rs-accent-strong);
+    color: var(--rs-on-accent);
+  }
+  .btn-brass:hover:not(:disabled) {
+    background: var(--rs-accent-strong);
+  }
+
+  .btn-ghost {
+    @apply btn border-line bg-surface-2 text-ink;
+  }
+  .btn-ghost:hover:not(:disabled) {
+    border-color: var(--rs-line-strong);
+    background: var(--rs-surface);
+  }
+
+  /* Lamp buttons: a green lamp is "clear to proceed", a red lamp is "stop". */
+  .btn-lamp-green {
+    @apply btn;
+    background: var(--rs-green-fill);
+    border-color: var(--rs-green-line);
+    color: var(--rs-green-text);
+  }
+  .btn-lamp-green:hover:not(:disabled) {
+    border-color: var(--rs-green);
+    box-shadow: 0 0 0 1px var(--rs-green-line);
+  }
+
+  .btn-lamp-red {
+    @apply btn;
+    background: var(--rs-red-fill);
+    border-color: var(--rs-red-line);
+    color: var(--rs-red-text);
+  }
+  .btn-lamp-red:hover:not(:disabled) {
+    border-color: var(--rs-red);
+    box-shadow: 0 0 0 1px var(--rs-red-line);
+  }
+
+  .btn-quiet {
+    @apply btn border-transparent bg-transparent text-muted;
+  }
+  .btn-quiet:hover:not(:disabled) {
+    color: var(--rs-text);
+    background: var(--rs-surface-2);
+  }
+
+  /* ── Form controls ─────────────────────────────────────────────────────── */
+
+  /* Dark: a recessed field in a control panel. Light: a ruled form field. */
+  .field {
+    font-family: 'IBM Plex Sans', sans-serif;
+    @apply w-full rounded border px-2.5 py-2 text-[13px] leading-tight transition-colors duration-150;
+    background: var(--rs-surface-3);
+    border-color: var(--rs-line);
+    color: var(--rs-text);
+  }
+  .field::placeholder {
+    color: var(--rs-text-dim);
+  }
+  .field:hover:not(:disabled) {
+    border-color: var(--rs-line-strong);
+  }
+  .field:focus {
+    outline: none;
+    border-color: var(--rs-accent);
+    box-shadow: 0 0 0 2px var(--rs-accent-soft);
+  }
+  .field:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  .field-label {
+    font-family: 'IBM Plex Mono', monospace;
+    @apply mb-1 block text-[10px] font-medium uppercase leading-none tracking-[0.12em] text-muted;
+  }
+
+  .check {
+    @apply h-4 w-4 shrink-0 cursor-pointer rounded-sm;
+    accent-color: var(--rs-accent);
+  }
+
+  /* ── Franking marks ────────────────────────────────────────────────────────
+     Square-cornered, letterspaced mono — a stamped mark on a document rather
+     than a rounded web pill. Semantics are identical across themes. */
+
+  .mark {
+    font-family: 'IBM Plex Mono', monospace;
+    @apply inline-flex items-center gap-1.5 whitespace-nowrap rounded-sm border
+      px-1.5 py-[3px] text-[10px] font-semibold uppercase leading-none tracking-[0.09em];
+  }
+
+  .mark-red {
+    background: var(--rs-red-fill);
+    border-color: var(--rs-red-line);
+    color: var(--rs-red-text);
+  }
+  .mark-amber {
+    background: var(--rs-amber-fill);
+    border-color: var(--rs-amber-line);
+    color: var(--rs-amber-text);
+  }
+  .mark-green {
+    background: var(--rs-green-fill);
+    border-color: var(--rs-green-line);
+    color: var(--rs-green-text);
+  }
+  .mark-brass {
+    background: var(--rs-accent-soft);
+    border-color: var(--rs-accent-line);
+    color: var(--rs-accent);
+  }
+  .mark-neutral {
+    background: var(--rs-surface-2);
+    border-color: var(--rs-line);
+    color: var(--rs-text-muted);
+  }
+
+  /* ── Tables: a ruled register ──────────────────────────────────────────── */
+
+  .rs-thead {
+    background: var(--rs-surface-2);
+    border-bottom: 1px solid var(--rs-line-strong);
+  }
+
+  .rs-th {
+    font-family: 'IBM Plex Mono', monospace;
+    @apply px-3 py-2.5 text-left text-[10px] font-semibold uppercase leading-none tracking-[0.12em] text-muted;
+  }
+
+  .rs-th-sort {
+    @apply rs-th cursor-pointer select-none transition-colors;
+  }
+  .rs-th-sort:hover {
+    color: var(--rs-accent);
+  }
+
+  .rs-td {
+    @apply px-3 py-2.5 align-middle text-[13px] text-ink;
+    border-bottom: 1px solid var(--rs-line-soft);
+  }
+
+  .rs-row {
+    @apply transition-colors duration-100;
+  }
+  .rs-row:hover {
+    background: var(--rs-surface-2);
+  }
+
+  /* ── Lamps ─────────────────────────────────────────────────────────────────
+     A physical indicator lamp. The halo is driven by --rs-glow, so it
+     illuminates in the control room and reads as flat printed ink on paper. */
+
+  .lamp {
+    @apply inline-block shrink-0 rounded-full;
+    width: 8px;
+    height: 8px;
+  }
+
+  /* ── The one rotated stamp in the product: a final verdict ─────────────── */
+
+  .stamp {
+    font-family: 'Barlow Condensed', sans-serif;
+    @apply inline-flex items-center justify-center border-[2.5px] px-3 py-1
+      text-[19px] font-bold uppercase leading-none tracking-[0.16em];
+    border-radius: 2px;
+    transform: rotate(-4deg);
+  }
+}
+
+/* ============================================================================
+   MOTION
+   Every non-essential animation below is disabled under prefers-reduced-motion.
+   ========================================================================= */
+
+.gantt-container {
+  overflow-x: auto;
+  overflow-y: visible;
+}
+
+/* Sleeper texture is drawn in SVG, but the timeline gutter gets a faint
+   longitudinal ballast tone so capsules sit on a formation, not on a page. */
+.timeline-bed {
+  background-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    var(--rs-sleeper) 48%,
+    var(--rs-sleeper) 52%,
+    transparent 100%
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
