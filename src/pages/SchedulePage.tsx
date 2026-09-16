@@ -166,6 +166,7 @@ export function SchedulePage() {
   const [selectedAssignment, setSelectedAssignment] = useState<ScheduleAssignment | null>(null);
   const [viewMode, setViewMode] = useState<'week' | 'full'>('week');
   const [statusFilter, setStatusFilter] = useState<ApprovalStatus | 'all'>('all');
+  const [ganttSearch, setGanttSearch] = useState('');
 
   async function fetchSchedule() {
     setLoading(true);
@@ -181,6 +182,20 @@ export function SchedulePage() {
   }
 
   useEffect(() => { fetchSchedule(); }, []);
+
+  // F-4 FIX: 30-second auto-refresh so multi-user approvals/rejections
+  // made by colleagues are visible without a manual Refresh click.
+  // The interval is paused when the browser tab is hidden to avoid
+  // unnecessary background requests.
+  useEffect(() => {
+    const POLL_MS = 30_000;
+    const id = setInterval(() => {
+      if (document.visibilityState === 'visible' && !generating) {
+        fetchSchedule();
+      }
+    }, POLL_MS);
+    return () => clearInterval(id);
+  }, [generating]); // re-run if generating state changes
 
   async function handleGenerate() {
     setGenerating(true);
@@ -209,9 +224,15 @@ export function SchedulePage() {
 
   // Filter and group by branch → section
   const grouped = useMemo(() => {
-    const filtered = statusFilter === 'all'
+    const q = ganttSearch.trim().toLowerCase();
+    const statusFiltered = statusFilter === 'all'
       ? assignments
       : assignments.filter(a => a.approval_status === statusFilter);
+
+    // Apply defect-ID search on top of status filter
+    const filtered = q === ''
+      ? statusFiltered
+      : statusFiltered.filter(a => a.defect_id.toLowerCase().includes(q));
 
     const sectionInfoMap = deriveSectionInfo(filtered);
 
@@ -242,7 +263,7 @@ export function SchedulePage() {
     }
 
     return byBranch;
-  }, [assignments, statusFilter]);
+  }, [assignments, statusFilter, ganttSearch]);
 
   function handleStatusChange(id: number, status: ApprovalStatus) {
     setAssignments(prev => prev.map(a => a.id === id ? { ...a, approval_status: status } : a));
@@ -279,6 +300,40 @@ export function SchedulePage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            {/* Defect ID search */}
+            <div className="relative">
+              <svg
+                className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted"
+                fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+              </svg>
+              <input
+                id="search-gantt-defect"
+                type="text"
+                className="field w-48 pl-8 pr-7 text-[12px]"
+                placeholder="Search Defect ID…"
+                value={ganttSearch}
+                onChange={e => setGanttSearch(e.target.value)}
+              />
+              {ganttSearch && (
+                <button
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-ink"
+                  onClick={() => setGanttSearch('')}
+                  title="Clear"
+                >
+                  <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
+            {ganttSearch.trim() !== '' && (
+              <span className="font-mono text-[11px] text-muted">
+                {Object.values(grouped).flat().reduce((n, r) => n + r.assignments.length, 0)} match{Object.values(grouped).flat().reduce((n, r) => n + r.assignments.length, 0) !== 1 ? 'es' : ''}
+              </span>
+            )}
+
             {/* View toggle */}
             <div className="flex items-center rounded border border-line bg-surface p-0.5">
               {(['week', 'full'] as const).map(mode => (

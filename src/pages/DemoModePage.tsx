@@ -1,14 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { createDefect, reoptimize, getSchedule, DefectCreate, SolverResult, ScheduleAssignment } from '../services/api';
+import { createDefect, reoptimize, getSchedule, getSections, DefectCreate, SolverResult, ScheduleAssignment, BlockSection } from '../services/api';
 import { Lamp } from '../components/ui/Lamp';
 import { useReducedMotion } from '../theme/ThemeContext';
 
 // Pre-filled dramatic example: IMR-class defect on ghat section
+// Section 36 = Kasara → Igatpuri (ghat section, high criticality)
 const DEMO_DEFAULTS: DefectCreate = {
   defect_id: `DEMO-URGENT-${Date.now().toString().slice(-4)}`,
   department: 'Engineering',
-  block_section_id: 'KYN_THAL',
+  block_section_id: '36',
   defect_type: 'IMR',
   date_reported: new Date().toISOString().split('T')[0],
   days_overdue: 21,
@@ -20,6 +21,14 @@ const DEMO_DEFAULTS: DefectCreate = {
 
 type DemoStep = 'idle' | 'injecting' | 'injected' | 'solving' | 'done' | 'error';
 
+export function DemoModePage() {
+  const reduced = useReducedMotion();
+  // F-5: load all block sections dynamically
+  const [allSections, setAllSections] = useState<BlockSection[]>([]);
+  useEffect(() => {
+    getSections().then(setAllSections).catch(() => setAllSections([]));
+  }, []);
+
 interface BeforeAfterDiff {
   newDefectAssignment: ScheduleAssignment | null;
   approvedCountBefore: number;
@@ -28,8 +37,6 @@ interface BeforeAfterDiff {
   solverResult: SolverResult;
 }
 
-export function DemoModePage() {
-  const reduced = useReducedMotion();
   const [form, setForm] = useState<DefectCreate>({ ...DEMO_DEFAULTS, defect_id: `DEMO-URGENT-${Date.now().toString().slice(-4)}` });
   const [step, setStep] = useState<DemoStep>('idle');
   const [error, setError] = useState<string | null>(null);
@@ -147,7 +154,22 @@ export function DemoModePage() {
           </div>
           <div className="col-span-2">
             <label className="field-label" htmlFor="demo-section">Block Section</label>
-            <input id="demo-section" className="field" value={form.block_section_id} onChange={e => set('block_section_id', e.target.value)} disabled={!!injectedDefectId} />
+            <select
+              id="demo-section"
+              className="field"
+              value={form.block_section_id}
+              onChange={e => set('block_section_id', e.target.value)}
+              disabled={!!injectedDefectId}
+            >
+              {allSections.length === 0
+                ? <option value={form.block_section_id}>{form.block_section_id}</option>
+                : allSections.map(s => (
+                    <option key={s.section_id} value={s.section_id}>
+                      {s.from_station} → {s.to_station} ({s.section_id})
+                    </option>
+                  ))
+              }
+            </select>
           </div>
           <div>
             <label className="field-label" htmlFor="demo-type">Defect Type</label>

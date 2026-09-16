@@ -7,7 +7,7 @@ import {
   Title, Tooltip, Legend,
 } from 'chart.js';
 import { Bar, Pie } from 'react-chartjs-2';
-import { useReducedMotion } from '../theme/ThemeContext';
+import { useReducedMotion, useTheme } from '../theme/ThemeContext';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Title, Tooltip, Legend);
 
@@ -47,6 +47,9 @@ function StatCard({ label, value, sub, accent, index = 0 }: { label: string; val
 
 export function AnalyticsPage() {
   const reduced = useReducedMotion();
+  // F-3 FIX: read theme from context (reactive) instead of DOM at render time
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [defects, setDefects] = useState<Defect[]>([]);
   const [assignments, setAssignments] = useState<ScheduleAssignment[]>([]);
@@ -114,8 +117,7 @@ export function AnalyticsPage() {
   // Chart data
   const depts = Object.keys(deptBreakdown);
 
-  // We read the current theme from the HTML tag to style Chart.js text
-  const isDark = document.documentElement.dataset.theme === 'dark';
+  // F-3 FIX: isDark now comes from ThemeContext above — no DOM read needed here
   const textColor = isDark ? '#8ca3be' : '#617489';
   const gridColor = isDark ? '#2a2f36' : '#e0e5eb';
 

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { getDefects, createDefect, Defect, DefectCreate } from '../services/api';
+import { getDefects, createDefect, getSections, Defect, DefectCreate, BlockSection } from '../services/api';
 import { Lamp } from '../components/ui/Lamp';
 import { PriorityGauge } from '../components/ui/PriorityGauge';
 import { Reveal } from '../components/ui/Reveal';
@@ -70,13 +70,26 @@ function SortIcon({ col, sortKey, sortDir }: { col: SortKey; sortKey: SortKey; s
 
 // ── Add Defect Modal ──────────────────────────────────────────────────────────
 
-const DEMO_SECTIONS = ['KYN_THAL', 'THAL_KJT', 'KJT_ROHA', 'CST_KYN', 'KYN_IGP', 'IGP_KHED'];
 const DEPARTMENTS = ['Engineering', 'S&T', 'OHE'];
 const DEFECT_TYPES = ['IMR', 'PMR', 'CMR', 'Signal', 'Track', 'OHE'];
 const CRITICALITIES = ['Low', 'Medium', 'High', 'Critical'];
 
+// F-1: useSections hook — fetches all block sections from the API once
+function useSections(): { sections: BlockSection[]; loading: boolean } {
+  const [sections, setSections] = useState<BlockSection[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    getSections()
+      .then(setSections)
+      .catch(() => setSections([]))
+      .finally(() => setLoading(false));
+  }, []);
+  return { sections, loading };
+}
+
 function AddDefectModal({ onClose, onCreated }: { onClose: () => void; onCreated: (d: Defect) => void }) {
   const reduced = useReducedMotion();
+  const { sections: allSections, loading: sectionsLoading } = useSections();
   const today = new Date().toISOString().split('T')[0];
   const [form, setForm] = useState<DefectCreate>({
     defect_id: `DEF-${Date.now().toString().slice(-6)}`,
@@ -171,7 +184,14 @@ function AddDefectModal({ onClose, onCreated }: { onClose: () => void; onCreated
               <label className="field-label" htmlFor="new-section">Block Section</label>
               <select id="new-section" className="field" value={form.block_section_id}
                 onChange={e => set('block_section_id', e.target.value)}>
-                {DEMO_SECTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+                {sectionsLoading
+                  ? <option>Loading sections…</option>
+                  : allSections.map(s => (
+                      <option key={s.section_id} value={s.section_id}>
+                        {s.from_station} → {s.to_station} ({s.section_id})
+                      </option>
+                    ))
+                }
               </select>
             </div>
             <div>
@@ -231,6 +251,13 @@ export function PendingRequestsPage() {
   const [filterDept, setFilterDept] = useState('');
   const [filterSection, setFilterSection] = useState('');
   const [filterMinDays, setFilterMinDays] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchQuery), 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const [sortKey, setSortKey] = useState<SortKey>('predicted_priority_score');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
@@ -245,6 +272,7 @@ export function PendingRequestsPage() {
         department: filterDept || undefined,
         block_section_id: filterSection || undefined,
         min_days_overdue: filterMinDays ? parseInt(filterMinDays) : undefined,
+        search: debouncedSearch || undefined,
       });
       setDefects(data);
     } catch (err: unknown) {
@@ -252,7 +280,7 @@ export function PendingRequestsPage() {
     } finally {
       setLoading(false);
     }
-  }, [filterDept, filterSection, filterMinDays]);
+  }, [filterDept, filterSection, filterMinDays, debouncedSearch]);
 
   useEffect(() => { fetchDefects(); }, [fetchDefects]);
 
@@ -261,21 +289,23 @@ export function PendingRequestsPage() {
     else { setSortKey(key); setSortDir('desc'); }
   }
 
-  const sorted = [...defects].sort((a, b) => {
-    let va: string | number = a[sortKey] ?? 0;
-    let vb: string | number = b[sortKey] ?? 0;
-    if (typeof va === 'string') va = va.toLowerCase();
-    if (typeof vb === 'string') vb = vb.toLowerCase();
-    if (va < vb) return sortDir === 'asc' ? -1 : 1;
-    if (va > vb) return sortDir === 'asc' ? 1 : -1;
-    return 0;
-  });
+  const sorted = [...defects]
+    .sort((a, b) => {
+      let va: string | number = a[sortKey] ?? 0;
+      let vb: string | number = b[sortKey] ?? 0;
+      if (typeof va === 'string') va = va.toLowerCase();
+      if (typeof vb === 'string') vb = vb.toLowerCase();
+      if (va < vb) return sortDir === 'asc' ? -1 : 1;
+      if (va > vb) return sortDir === 'asc' ? 1 : -1;
+      return 0;
+    });
 
   function handleDefectCreated(d: Defect) {
     setDefects(prev => [d, ...prev]);
   }
 
-  const sectionIds = Array.from(new Set(defects.map(d => d.block_section_id))).sort();
+  const { sections: allSections } = useSections();
+  const sectionIds = allSections.map(s => s.section_id);
   const highCount = sorted.filter(d => priorityBand(d.predicted_priority_score) === 'high').length;
 
   return (
@@ -312,7 +342,7 @@ export function PendingRequestsPage() {
             <label className="field-label" htmlFor="filter-section">Block Section</label>
             <select id="filter-section" className="field" value={filterSection} onChange={e => setFilterSection(e.target.value)}>
               <option value="">All Sections</option>
-              {sectionIds.map(s => <option key={s} value={s}>{s}</option>)}
+          {sectionIds.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
           <div className="min-w-36">
@@ -342,6 +372,42 @@ export function PendingRequestsPage() {
           <span>{error}</span>
         </div>
       )}
+
+      {/* Defect ID Search bar */}
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1 max-w-sm">
+          <svg
+            className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted"
+            fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+          </svg>
+          <input
+            id="search-defect-id"
+            type="text"
+            className="field pl-8 pr-8"
+            placeholder="Search by Defect ID…"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+          />
+          {searchQuery && (
+            <button
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-ink"
+              onClick={() => setSearchQuery('')}
+              title="Clear search"
+            >
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
+        {searchQuery.trim() !== '' && (
+          <span className="font-mono text-[11px] text-muted">
+            {sorted.length} match{sorted.length !== 1 ? 'es' : ''}
+          </span>
+        )}
+      </div>
 
       {/* Table */}
       <div className="panel overflow-hidden">

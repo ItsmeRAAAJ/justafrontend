@@ -97,6 +97,8 @@ export function ConflictAlertsPage() {
   const [assignments, setAssignments] = useState<ScheduleAssignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchUnscheduled, setSearchUnscheduled] = useState('');
+  const [searchKeptApart, setSearchKeptApart] = useState('');
 
   useEffect(() => {
     async function load() {
@@ -117,12 +119,31 @@ export function ConflictAlertsPage() {
 
   const scheduledIds = useMemo(() => new Set(assignments.map(a => a.defect_id)), [assignments]);
   const unscheduled = useMemo(
-    () => defects.filter(d => !scheduledIds.has(d.defect_id)).sort((a, b) => (b.predicted_priority_score ?? 0) - (a.predicted_priority_score ?? 0)).slice(0, 50),
+    () => defects
+      .filter(d => !scheduledIds.has(d.defect_id))
+      .sort((a, b) => (b.predicted_priority_score ?? 0) - (a.predicted_priority_score ?? 0))
+      .slice(0, 50),
     [defects, scheduledIds]
   );
-  
+
+  // Apply search filter on top of the computed unscheduled list
+  const filteredUnscheduled = useMemo(() => {
+    const q = searchUnscheduled.trim().toLowerCase();
+    return q === '' ? unscheduled : unscheduled.filter(d => d.defect_id.toLowerCase().includes(q));
+  }, [unscheduled, searchUnscheduled]);
+
   const totalUnscheduled = defects.length - scheduledIds.size;
   const partitionNotes = useMemo(() => computePartitionNotes(assignments), [assignments]);
+
+  // Apply search filter on the kept-apart notes
+  const filteredPartitionNotes = useMemo(() => {
+    const q = searchKeptApart.trim().toLowerCase();
+    return q === ''
+      ? partitionNotes
+      : partitionNotes.filter(n =>
+          n.defectA.toLowerCase().includes(q) || n.defectB.toLowerCase().includes(q)
+        );
+  }, [partitionNotes, searchKeptApart]);
 
   if (loading) {
     return (
@@ -170,6 +191,42 @@ export function ConflictAlertsPage() {
               <p className="mt-1 font-mono text-[10px] text-muted">Showing top {unscheduled.length} of {totalUnscheduled} defect{totalUnscheduled !== 1 ? 's' : ''} not yet assigned — ranked by AI priority</p>
             </div>
           </div>
+
+          {/* Search bar for unscheduled section */}
+          <div className="mt-3 flex items-center gap-2">
+            <div className="relative flex-1 max-w-xs">
+              <svg
+                className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted"
+                fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+              </svg>
+              <input
+                id="search-unscheduled"
+                type="text"
+                className="field pl-8 pr-7 text-[12px]"
+                placeholder="Search Defect ID in unscheduled…"
+                value={searchUnscheduled}
+                onChange={e => setSearchUnscheduled(e.target.value)}
+              />
+              {searchUnscheduled && (
+                <button
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-ink"
+                  onClick={() => setSearchUnscheduled('')}
+                  title="Clear"
+                >
+                  <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
+            {searchUnscheduled.trim() !== '' && (
+              <span className="font-mono text-[11px] text-muted">
+                {filteredUnscheduled.length} match{filteredUnscheduled.length !== 1 ? 'es' : ''}
+              </span>
+            )}
+          </div>
         </div>
 
         {unscheduled.length === 0 ? (
@@ -178,6 +235,10 @@ export function ConflictAlertsPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <p className="text-[13px] font-medium uppercase tracking-[0.05em]">All defects are scheduled!</p>
+          </div>
+        ) : filteredUnscheduled.length === 0 ? (
+          <div className="py-10 text-center text-[13px] text-muted">
+            No unscheduled defects match &quot;{searchUnscheduled}&quot;.
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -195,7 +256,7 @@ export function ConflictAlertsPage() {
                 </tr>
               </thead>
               <tbody>
-                {unscheduled.map((d, i) => (
+                {filteredUnscheduled.map((d, i) => (
                   <tr key={d.defect_id} className="rs-row">
                     <td className="rs-td font-mono text-[10px] text-muted text-center">#{i + 1}</td>
                     <td className="rs-td font-mono text-[12px] text-brass">{d.defect_id}</td>
@@ -234,21 +295,59 @@ export function ConflictAlertsPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <div>
+          <div className="flex-1">
             <h2 className="section-title">Why Were These Kept Apart?</h2>
             <p className="mt-1 font-mono text-[10px] text-muted">Same-department, adjacent-section pairs that ended up at different times — computed client-side</p>
           </div>
         </div>
 
-        {partitionNotes.length === 0 ? (
+        {/* Search bar for kept-apart section */}
+        <div className="flex items-center gap-2 mb-4">
+          <div className="relative flex-1 max-w-xs">
+            <svg
+              className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted"
+              fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+            </svg>
+            <input
+              id="search-kept-apart"
+              type="text"
+              className="field pl-8 pr-7 text-[12px]"
+              placeholder="Search Defect ID in decisions…"
+              value={searchKeptApart}
+              onChange={e => setSearchKeptApart(e.target.value)}
+            />
+            {searchKeptApart && (
+              <button
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-ink"
+                onClick={() => setSearchKeptApart('')}
+                title="Clear"
+              >
+                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
+          {searchKeptApart.trim() !== '' && (
+            <span className="font-mono text-[11px] text-muted">
+              {filteredPartitionNotes.length} match{filteredPartitionNotes.length !== 1 ? 'es' : ''}
+            </span>
+          )}
+        </div>
+
+        {filteredPartitionNotes.length === 0 ? (
           <p className="py-6 text-center text-[13px] text-muted">
             {assignments.length === 0
               ? 'Generate a schedule first to see scheduling decision notes.'
+              : searchKeptApart.trim() !== ''
+              ? `No decisions found matching "${searchKeptApart}".`
               : 'No adjacent-section conflicts detected — all same-department pairs were scheduled with clear separation.'}
           </p>
         ) : (
           <div className="flex flex-col gap-3">
-            {partitionNotes.map((note, i) => (
+            {filteredPartitionNotes.map((note, i) => (
               <div key={i} className="flex items-start gap-3 rounded border border-line bg-surface-2 p-3">
                 <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded bg-brass-soft font-mono text-[10px] font-bold text-brass">{i + 1}</div>
                 <div>

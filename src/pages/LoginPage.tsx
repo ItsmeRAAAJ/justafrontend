@@ -228,15 +228,20 @@ function LoginRoundel() {
 /** Three relay lamps stepping in — the room coming up to power. */
 function PowerOnLamps() {
   const reduced = useReducedMotion();
-  const aspects = ['var(--rs-amber-core)', 'var(--rs-green-core)', 'var(--rs-green-core)'];
+  const aspects = ['var(--rs-red-core)', 'var(--rs-amber-core)', 'var(--rs-green-core)'];
   return (
     <span className="flex items-center gap-1.5" aria-hidden="true">
       {aspects.map((c, i) => (
         <motion.span
           key={i}
-          initial={reduced ? { opacity: 1 } : { opacity: 0.14 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.3, delay: reduced ? 0 : 0.62 + i * 0.13 }}
+          initial={{ opacity: 0.2 }}
+          animate={reduced ? { opacity: 1 } : { opacity: [0.2, 1, 0.2] }}
+          transition={{
+            duration: 1.5,
+            repeat: Infinity,
+            delay: i * 0.4,
+            ease: "easeInOut"
+          }}
           className="flex"
         >
           <Lamp color={c} size={6} />
@@ -387,7 +392,7 @@ export function LoginPage() {
             </form>
 
             <div className="mt-5 border-t border-line-soft pt-3.5 text-center">
-              <span className="caption">Smart India Hackathon 2025 · PS 26027</span>
+              <span className="caption">Smart India Hackathon 2026 · PS 26027</span>
             </div>
           </div>
         </motion.div>

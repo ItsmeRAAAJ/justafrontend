@@ -92,12 +92,27 @@ export interface SolverResult {
     department: string;
   }[];
   unscheduled: string[];
+  pool_size?: number;
+  considered?: number;
+  capped?: boolean;
+}
+
+// B-5: Async job response (202)
+export interface JobResponse {
+  job_id: string;
+  status: 'pending' | 'running' | 'done' | 'error';
+  message?: string;
+  result?: SolverResult;
+  error?: string;
+  created_at?: string;
+  completed_at?: string;
 }
 
 export interface DefectFilter {
   department?: string;
   block_section_id?: string;
   min_days_overdue?: number;
+  search?: string;
 }
 
 // ── Token helpers ────────────────────────────────────────────
@@ -193,6 +208,7 @@ export async function getDefects(filter: DefectFilter = {}): Promise<Defect[]> {
   if (filter.department) params.set('department', filter.department);
   if (filter.block_section_id) params.set('block_section_id', filter.block_section_id);
   if (filter.min_days_overdue != null) params.set('min_days_overdue', String(filter.min_days_overdue));
+  if (filter.search) params.set('search', filter.search);
   const qs = params.toString() ? `?${params}` : '';
   return request<Defect[]>(`/api/defects/${qs}`);
 }
@@ -204,15 +220,54 @@ export async function createDefect(data: DefectCreate): Promise<Defect> {
   });
 }
 
-// ── Schedule ─────────────────────────────────────────────────
+// ── Sections ─────────────────────────────────────────────────────────
+
+export async function getSections(): Promise<BlockSection[]> {
+  return request<BlockSection[]>('/api/sections/');
+}
+
+// ── Schedule ─────────────────────────────────────────────────────────
 
 export async function getSchedule(): Promise<ScheduleAssignment[]> {
   return request<ScheduleAssignment[]>('/api/schedule/');
 }
 
-export async function generateSchedule(): Promise<SolverResult> {
-  return request<SolverResult>('/api/schedule/generate', { method: 'POST' });
+// B-5: poll job status
+export async function getJobStatus(jobId: string): Promise<JobResponse> {
+  return request<JobResponse>(`/api/schedule/jobs/${jobId}`);
 }
+
+/**
+ * B-5 FIX: pollUntilDone — submits a generate/reoptimize request (returns 202+job_id)
+ * then polls GET /jobs/{id} every 3 seconds until status is done or error.
+ * Throws if the job errors or times out after maxWaitMs.
+ */
+async function pollUntilDone(
+  jobId: string,
+  maxWaitMs = 90_000,
+  intervalMs = 3_000,
+): Promise<SolverResult> {
+  const deadline = Date.now() + maxWaitMs;
+  while (Date.now() < deadline) {
+    await new Promise(r => setTimeout(r, intervalMs));
+    const job = await getJobStatus(jobId);
+    if (job.status === 'done') {
+      if (!job.result) throw new Error('Job done but result is missing.');
+      return job.result;
+    }
+    if (job.status === 'error') {
+      throw new Error(job.error ?? 'Solver job failed.');
+    }
+    // pending | running → keep polling
+  }
+  throw new Error('Solver timed out after 90 seconds.');
+}
+
+export async function generateSchedule(): Promise<SolverResult> {
+  const job = await request<JobResponse>('/api/schedule/generate', { method: 'POST' });
+  return pollUntilDone(job.job_id);
+}
+
 
 export async function approveAssignment(id: number): Promise<ScheduleAssignment> {
   return request<ScheduleAssignment>(`/api/schedule/${id}/approve`, { method: 'POST' });
@@ -223,11 +278,34 @@ export async function rejectAssignment(id: number): Promise<ScheduleAssignment> 
 }
 
 export async function reoptimize(newDefectId: string): Promise<SolverResult> {
-  return request<SolverResult>('/api/schedule/reoptimize', {
+  const job = await request<JobResponse>('/api/schedule/reoptimize', {
     method: 'POST',
     body: JSON.stringify({ new_defect_id: newDefectId }),
   });
+  return pollUntilDone(job.job_id);
 }
+
+// ── Train Movements ───────────────────────────────────────────────────
+
+export interface TrainMovement {
+  id: number;
+  train_name: string | null;
+  train_number: string | null;
+  station_name: string | null;
+  station_code: string | null;
+  arrival: string | null;
+  departure: string | null;
+  day: number | null;
+}
+
+export async function getTrainMovements(params?: { station_code?: string; day?: number }): Promise<TrainMovement[]> {
+  const p = new URLSearchParams();
+  if (params?.station_code) p.set('station_code', params.station_code);
+  if (params?.day != null) p.set('day', String(params.day));
+  const qs = p.toString() ? `?${p}` : '';
+  return request<TrainMovement[]>(`/api/train-movements/${qs}`);
+}
+
 
 // ── Analytics ────────────────────────────────────────────────
 
