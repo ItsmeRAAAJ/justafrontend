@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { getDefects, getSchedule, Defect, ScheduleAssignment } from '../services/api';
 import { Lamp } from '../components/ui/Lamp';
 import { useReducedMotion } from '../theme/ThemeContext';
+import { AIExplainButton, buildUnscheduledNote } from '../components/AIExplainModal';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -252,7 +253,7 @@ export function ConflictAlertsPage() {
                   <th className="rs-th">Section</th>
                   <th className="rs-th">Days Overdue</th>
                   <th className="rs-th">Priority Score</th>
-                  <th className="rs-th">Note</th>
+                  <th className="rs-th">Why not scheduled?</th>
                 </tr>
               </thead>
               <tbody>
@@ -269,10 +270,8 @@ export function ConflictAlertsPage() {
                       </span>
                     </td>
                     <td className="rs-td"><PriorityBadge score={d.predicted_priority_score} /></td>
-                    <td className="rs-td text-[11px] italic text-muted">
-                      {priorityBand(d.predicted_priority_score) === 'high'
-                        ? '⚠ High-priority work awaiting scheduling window'
-                        : 'No available window in current horizon'}
+                    <td className="rs-td text-[11px] leading-relaxed text-muted" style={{ maxWidth: 260 }}>
+                      {buildUnscheduledNote(d)}
                     </td>
                   </tr>
                 ))}
@@ -357,7 +356,7 @@ export function ConflictAlertsPage() {
                     <span className="font-mono font-semibold text-ink">{note.defectB}</span>
                     <span className="ml-2 font-mono text-[10px] text-dim">({note.sectionA} / {note.sectionB}, Day {note.dayA} vs Day {note.dayB})</span>
                   </div>
-                  <div className="mt-1 text-[12px] italic text-muted">{note.reason}</div>
+                  <div className="mt-1 text-[12px] leading-relaxed text-muted">{note.reason}</div>
                 </div>
               </div>
             ))}

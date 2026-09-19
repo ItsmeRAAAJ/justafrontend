@@ -5,6 +5,7 @@ import { Lamp } from '../components/ui/Lamp';
 import { PriorityGauge } from '../components/ui/PriorityGauge';
 import { Reveal } from '../components/ui/Reveal';
 import { useReducedMotion } from '../theme/ThemeContext';
+import { AIExplainButton } from '../components/AIExplainModal';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -15,18 +16,7 @@ function priorityBand(score: number | null): 'high' | 'medium' | 'low' {
   return 'low';
 }
 
-function buildExplanation(d: Defect): string {
-  const parts: string[] = [];
-  const band = priorityBand(d.predicted_priority_score);
-  parts.push(`${band.charAt(0).toUpperCase() + band.slice(1)} priority`);
-  if (d.defect_type) parts.push(`${d.defect_type}-class`);
-  if (d.days_overdue > 0) parts.push(`${d.days_overdue} days overdue`);
-  if (d.is_ghat_section) parts.push('ghat section');
-  if (d.location_criticality === 'High' || d.location_criticality === 'Critical')
-    parts.push(`${d.location_criticality.toLowerCase()} criticality`);
-  if (d.season_restriction_flag) parts.push('season-restricted');
-  return parts.join(', ');
-}
+// buildExplanation replaced by AIExplainButton modal (see AIExplainModal.tsx)
 
 type SortKey = 'predicted_priority_score' | 'days_overdue' | 'department' | 'defect_type';
 type SortDir = 'asc' | 'desc';
@@ -495,8 +485,8 @@ export function PendingRequestsPage() {
                     <td className="rs-td">
                       <PriorityBadge score={d.predicted_priority_score} />
                     </td>
-                    <td className="rs-td max-w-xs">
-                      <span className="font-mono text-[10px] italic text-muted">{buildExplanation(d)}</span>
+                    <td className="rs-td">
+                      <AIExplainButton defect={d} />
                     </td>
                   </motion.tr>
                 ))
