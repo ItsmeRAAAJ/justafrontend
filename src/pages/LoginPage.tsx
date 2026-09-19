@@ -1,4 +1,5 @@
-import { useState, FormEvent, lazy, Suspense } from 'react';
+import { useState, useEffect, FormEvent, lazy, Suspense } from 'react';
+import trainHonk from '../soundEffect/trainhonk.mp3';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { useAuth } from '../context/AuthContext';
@@ -101,20 +102,20 @@ function PowerOnLamps() {
 }
 
 /** Corridor legend, bottom-left: tells the viewer what the drawing is. */
-function CorridorLegend() {
-  return (
-    <div className="pointer-events-none absolute bottom-5 left-5 hidden select-none md:block" aria-hidden="true">
-      <div className="font-mono text-[10px] uppercase tracking-[0.18em]" style={{ color: 'var(--rs-text-dim)' }}>
-        Central Railway · Mumbai Division
-      </div>
-      <div className="mt-1 font-display text-[15px] uppercase tracking-[0.1em]" style={{ color: 'var(--rs-text-muted)' }}>
-        CSMT — KYN
-        <span style={{ color: 'var(--rs-accent)' }}> ⑂ </span>
-        IGP / KJT
-      </div>
-    </div>
-  );
-}
+// function CorridorLegend() {
+//   return (
+//     <div className="pointer-events-none absolute bottom-5 left-5 hidden select-none md:block" aria-hidden="true">
+//       <div className="font-mono text-[10px] uppercase tracking-[0.18em]" style={{ color: 'var(--rs-text-dim)' }}>
+//         Central Railway · Mumbai Division
+//       </div>
+//       <div className="mt-1 font-display text-[15px] uppercase tracking-[0.1em]" style={{ color: 'var(--rs-text-muted)' }}>
+//         CSMT — KYN
+//         <span style={{ color: 'var(--rs-accent)' }}> ⑂ </span>
+//         IGP / KJT
+//       </div>
+//     </div>
+//   );
+// }
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -127,6 +128,11 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const audio = new Audio(trainHonk);
+    audio.play().catch((e) => console.warn('Audio autoplay blocked by browser:', e));
+  }, []);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -154,7 +160,7 @@ export function LoginPage() {
 
   return (
     <div
-      className="relative flex min-h-screen items-center justify-center overflow-hidden p-4"
+      className="relative flex min-h-screen items-center justify-center md:justify-end md:pr-[15%] lg:pr-[20%] overflow-hidden p-4"
       data-niyojan-login
       style={{ ...LIGHT_VARS, background: 'var(--rs-bg)' }}
     >
@@ -175,7 +181,7 @@ export function LoginPage() {
         />
       </motion.div>
 
-      <CorridorLegend />
+      {/* <CorridorLegend /> */}
 
 
       {/* ── Foreground ──────────────────────────────────────────────────── */}
@@ -194,7 +200,7 @@ export function LoginPage() {
           </Reveal>
           <Reveal index={3} className="mt-3">
             <p className="text-[13px] leading-snug" style={{ color: 'var(--rs-text-muted)' }}>
-              Optimized Block Scheduling AI Brain
+              Optimized Block Scheduling AI Brain for Indian Railways
             </p>
           </Reveal>
         </div>
