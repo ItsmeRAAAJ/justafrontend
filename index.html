@@ -14,17 +14,13 @@
       rel="stylesheet"
     />
     <script>
-      // Default is light, this is the primary viewing mode, with dark available.
+      // Force light theme on startup as requested
       (function () {
+        document.documentElement.dataset.theme = 'light';
+        document.querySelector('meta[name="theme-color"]').setAttribute('content', '#e9ecf0');
         try {
-          var t = localStorage.getItem('rs_theme');
-          document.documentElement.dataset.theme = t === 'dark' ? 'dark' : 'light';
-          document.querySelector('meta[name="theme-color"]').setAttribute('content',
-            t === 'dark' ? '#141210' : '#e9ecf0'
-          );
-        } catch (e) {
-          document.documentElement.dataset.theme = 'light';
-        }
+          localStorage.setItem('rs_theme', 'light');
+        } catch (e) {}
       })();
     </script>
   </head>

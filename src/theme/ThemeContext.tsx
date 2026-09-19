@@ -20,14 +20,7 @@ interface ThemeContextValue {
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 function readStoredTheme(): Theme {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored === 'dark') return 'dark';
-    if (stored === 'light') return 'light';
-    return 'light'; // Default to light on first load
-  } catch {
-    return 'light';
-  }
+  return 'light'; // User requested to always start in light mode by default
 }
 
 function prefersReducedMotion(): boolean {
@@ -68,8 +61,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const toggleTheme = useCallback(() => {
-    setTheme(readStoredTheme() === 'light' ? 'dark' : 'light');
-  }, [setTheme]);
+    setTheme(theme === 'light' ? 'dark' : 'light');
+  }, [theme, setTheme]);
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme, setTheme }}>
