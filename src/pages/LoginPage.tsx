@@ -131,7 +131,25 @@ export function LoginPage() {
 
   useEffect(() => {
     const audio = new Audio(trainHonk);
-    audio.play().catch((e) => console.warn('Audio autoplay blocked by browser:', e));
+    audio.preload = 'auto';
+
+    const startAudio = () => {
+      void audio.play().catch((e) => console.warn('Login sound could not play:', e));
+    };
+    const removeFallback = () => {
+      window.removeEventListener('pointerdown', startAudio);
+      window.removeEventListener('keydown', startAudio);
+    };
+
+    startAudio();
+    window.addEventListener('pointerdown', startAudio, { once: true });
+    window.addEventListener('keydown', startAudio, { once: true });
+
+    return () => {
+      removeFallback();
+      audio.pause();
+      audio.currentTime = 0;
+    };
   }, []);
 
   async function handleSubmit(e: FormEvent) {
